@@ -16,7 +16,7 @@ telbot = telebot.TeleBot(BOT_ID)
 
 info = {}
 info2 = {}
-
+memory = []
 
 
 @telbot.message_handler(commands=["start"])
@@ -30,33 +30,47 @@ def soobsh(message: Message):
     # telbot.send_message(message.from_user.id,"вас выследили",reply_markup=knopki)
     telbot.send_sticker(message.from_user.id, "CAACAgIAAxkBAAEMM81mU1B_M45YswKX4Lt-5PM9uaktQAACAQADwDZPExguczCrPy1RNQQ")
 
+
 @telbot.message_handler(content_types=["text"])
 def soobsh(message: Message):
-    print(message)
     city_player = message.text
-
 
     found_city = gc.search_cities(message.text, case_sensitive=False, contains_search=False)
     if not found_city:
-        telbot.send_message(message.from_user.id,"Такого города не существует")
+        telbot.send_message(message.from_user.id, "Такого города не существует")
         return
 
 
+    if city_player in memory:
+        telbot.send_message(message.from_user.id,"Такой город уже существует")
+        return
+    if len(memory)>0:
+        if memory[-1][-1]!=city_player[0]:
+            telbot.send_message(message.from_user.id, "Вам на другую букву")
+            return
+    memory.append(city_player)
     last_char = city_player[-1]
 
-    if city_player[-1] in ["ь","ъ","ы"]:
+    if city_player[-1] in ["ь", "ъ", "ы"]:
         last_char = city_player[-2]
-    telbot.send_message(message.from_user.id,f"Мне на букву {last_char}")
+    telbot.send_message(message.from_user.id, f"Мне на букву {last_char}")
+    botcity = poisk(word=last_char)
+    memory.append(botcity)
+    telbot.send_message(message.from_user.id, botcity)
+    print((memory))
 
-def poisk():
-    pass
+
+def poisk(word):
+    for x in cities:
+        names = cities[x]['alternatenames']
+        for y in names:
+            if y and y[0] == word.upper() and y not in memory:
+                return y
+
 
 telbot.polling()
 
-
-
-
 """
-- создать списолк и в процессе игры добавлять туда город юзера, но только в том случае, если он был найден (все подряд сообщения добавлять не надо)
-- внутри функции поиск создать цикл фор и пробежаться по всем элементам списка cities и отобразить только альтернативные имена всех городов мира (задача сложная, порпобовать попринтовать)
+загуглить: "как получить данные из википедии на пайтоне"
+посмотреть гайд на первых двух сайтах и сделать тоже самое, просто достать что-либо из википедии при помощи пайтона) это нам понадобится ;)
 """
