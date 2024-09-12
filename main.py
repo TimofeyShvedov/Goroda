@@ -55,17 +55,27 @@ def soobsh(message: Message):
         if member!=city_player[0]:
             telbot.send_message(message.from_user.id, "Вам на другую букву")
             return
-    memory.append(city_player)
-    lat,lon = found_city[0]["latitude"],found_city[0]["longitude"]
-    last_char = city_player[-1]
 
+    memory.append(city_player)  # добавляем город для запоминания
+
+    lat,lon = found_city[0]["latitude"],found_city[0]["longitude"]  # получаем коорды города юзера
+    life,gras,ic,tp=sience(shir=lat,dol=lon)    # отправляем запрос в API AQI (на сайт)
+    telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
+
+    # логика с последней буквой
+    last_char = city_player[-1]
     if city_player[-1] in ["ь", "ъ", "ы","й"]:
         last_char = city_player[-2]
     telbot.send_message(message.from_user.id, f"Мне на букву {last_char}")
-    botcity = poisk(word=last_char)
-    memory.append(botcity)
+
+
+    botcity,bot_shir,bot_dol = poisk(word=last_char)    # вызываем функцию поиск (вернёт нам: назв. города, широту и долготу)
+    memory.append(botcity)  # запоминаем, какой город назвал бот
+
+    life,gras,ic,tp=sience(shir=lat,dol=lon)    # тут отправляем данные города бота и просим узнать погоду
 
     telbot.send_message(message.from_user.id, botcity)
+    telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
     print((memory))
 
 
@@ -74,25 +84,24 @@ def poisk(word):
         names = cities[x]['alternatenames']
         for y in names:
             if y and y[0] == word.upper() and y not in memory:
-                return y
+                print(cities[x])
+                return y,cities[x]["latitude"],cities[x]["longitude"]   # бот нашёл название города и его коорды
 
-def sience():
-    fff = "http://api.airvisual.com/v2/nearest_city?lat=59.453791&lon=32.030708&key=e5bcfe8d-df20-4d0a-9954-5845c6396e0e"
+def sience(shir,dol):
+    fff = f"http://api.airvisual.com/v2/nearest_city?lat={shir}&lon={dol}&key=e5bcfe8d-df20-4d0a-9954-5845c6396e0e"
     otvet = requests.get(fff)
-    pprint(otvet.json())
+    #pprint(otvet.json())
     life = otvet.json()["data"]["current"]["pollution"]["aqicn"]
     gras = otvet.json()["data"]["current"]["weather"]["ts"]
     ic = otvet.json()["data"]["current"]["weather"]["ic"]
     tp = otvet.json()["data"]["current"]["weather"]["tp"]
 
+    return life,gras,ic,tp
 
 telbot.polling()
 
 """
-
-. Внутрь функции science передавать два параметра: lat, lon (широта долгота).
-2. Внутри функции есть ссылка, сделать из неё F строчку и подставить два аргумента (lat/lon) в нужные места
-3. В той же функции поставить просто принт с 3 переменными (ic, life...)
-4. Подумать, где нужно вызвать функцию и передать в неё ДВА параметра lat, lon.
-
+1. Сейчас функция сайнс работает не совсем правильно, потому что он нам не выводит данные с температурой города БОТА (не наш город)
+2. Зарегаться на сайте: ансплеш.ком
+3. Узнать что такое Sqlite, посмотреть в инете: как создать совю таблицу и просто вставить код из и нета в в тест файл :) 
 """
