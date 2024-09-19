@@ -1,5 +1,6 @@
 import json
 import os
+import sqlite3
 
 import telebot
 from telebot.types import KeyboardButton, ReplyKeyboardMarkup
@@ -23,12 +24,36 @@ memory = []
 def soobsh(message: Message):
     print(message)
 
+    # TODO: если юзернейм есть, то в базу данных нас добавляет, а если юзернейма нет, то он выдаёт None
+    # добавлять в БД юзера только, если у него есть юзернейм
+    update(message.from_user.username, message.from_user.id)
+
+
     print(info)
     knopki = ReplyKeyboardMarkup(resize_keyboard=True)
     knopk = KeyboardButton(text="ka", request_location=True)
     knopki.add(knopk)
     # telbot.send_message(message.from_user.id,"вас выследили",reply_markup=knopki)
     telbot.send_sticker(message.from_user.id, "CAACAgIAAxkBAAEMM81mU1B_M45YswKX4Lt-5PM9uaktQAACAQADwDZPExguczCrPy1RNQQ")
+def file():
+    with sqlite3.connect('my_database.db') as f:
+        cursor = f.cursor()
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS Users (
+        id_telega INTEGER ,
+        username TEXT NOT NULL)
+        ''')
+
+        f.commit()
+def update(username,id_telega):
+    with sqlite3.connect('my_database.db') as f:
+        cursor = f.cursor()
+        cursor.execute('INSERT INTO Users (username,id_telega) VALUES (?,?)',(username,id_telega))
+
+        f.commit()
+
+
+
 @telbot.message_handler(commands=["clear"])
 def chistka(message: Message):
     memory.clear()
@@ -61,6 +86,7 @@ def soobsh(message: Message):
     lat,lon = found_city[0]["latitude"],found_city[0]["longitude"]  # получаем коорды города юзера
     life,gras,ic,tp=sience(shir=lat,dol=lon)    # отправляем запрос в API AQI (на сайт)
     telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
+    telbot.send_location(message.from_user.id,lat,lon )
 
     # логика с последней буквой
     last_char = city_player[-1]
@@ -72,10 +98,11 @@ def soobsh(message: Message):
     botcity,bot_shir,bot_dol = poisk(word=last_char)    # вызываем функцию поиск (вернёт нам: назв. города, широту и долготу)
     memory.append(botcity)  # запоминаем, какой город назвал бот
 
-    life,gras,ic,tp=sience(shir=lat,dol=lon)    # тут отправляем данные города бота и просим узнать погоду
+    life,gras,ic,tp=sience(shir=bot_shir,dol=bot_dol)    # тут отправляем данные города бота и просим узнать погоду
 
     telbot.send_message(message.from_user.id, botcity)
     telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
+    telbot.send_location(message.from_user.id, bot_shir,bot_dol )
     print((memory))
 
 
@@ -101,7 +128,10 @@ def sience(shir,dol):
 telbot.polling()
 
 """
-1. Сейчас функция сайнс работает не совсем правильно, потому что он нам не выводит данные с температурой города БОТА (не наш город)
-2. Зарегаться на сайте: ансплеш.ком
-3. Узнать что такое Sqlite, посмотреть в инете: как создать совю таблицу и просто вставить код из и нета в в тест файл :) 
+1. Unsplash , посмотреть документацию или гайды в интернет и попробовать сделать точно такой же код, как мы делали с AQI
+(сечас код находится код находится в файле "тест"
+Задача: просто доставать картинки из сайта при помощи АПИ
+
+2. Пофоксить код на 27 строчке
+
 """
