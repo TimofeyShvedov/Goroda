@@ -27,6 +27,8 @@ def soobsh(message: Message):
     # TODO: если юзернейм есть, то в базу данных нас добавляет, а если юзернейма нет, то он выдаёт None
     # добавлять в БД юзера только, если у него есть юзернейм
     update(message.from_user.username, message.from_user.id)
+    if "username" = NULL:
+        
 
 
     print(info)
