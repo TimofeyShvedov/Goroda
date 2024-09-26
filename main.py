@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import sqlite3
 
 import telebot
@@ -27,7 +28,7 @@ def soobsh(message: Message):
     # TODO: если юзернейм есть, то в базу данных нас добавляет, а если юзернейма нет, то он выдаёт None
     # добавлять в БД юзера только, если у него есть юзернейм
     update(message.from_user.username, message.from_user.id)
-    if "username" = NULL:
+    # if "username" = NULL:
         
 
 
@@ -103,11 +104,26 @@ def soobsh(message: Message):
     life,gras,ic,tp=sience(shir=bot_shir,dol=bot_dol)    # тут отправляем данные города бота и просим узнать погоду
 
     telbot.send_message(message.from_user.id, botcity)
+    pictures=photos(goroda=botcity)
+    telbot.send_photo(message.from_user.id,pictures)
     telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
     telbot.send_location(message.from_user.id, bot_shir,bot_dol )
     print((memory))
+def photos(goroda):
+    fff=f"https://api.unsplash.com/search/photos?query={goroda}&per_page=10&client_id=0QOVEHz-gJJjG25inVgfq4y_eiEH_HYDnLGI6YnQbhc"
+    otvet = requests.get(fff)
 
+    # pprint(otvet.json())
+    full = otvet.json()["results"]
 
+    pictures = []
+    for info in full:
+
+        otpr = info['urls']['full']
+        pictures.append(otpr)
+    random.shuffle(pictures)
+
+    return pictures[0]
 def poisk(word):
     for x in cities:
         names = cities[x]['alternatenames']
@@ -130,10 +146,7 @@ def sience(shir,dol):
 telbot.polling()
 
 """
-1. Unsplash , посмотреть документацию или гайды в интернет и попробовать сделать точно такой же код, как мы делали с AQI
-(сечас код находится код находится в файле "тест"
-Задача: просто доставать картинки из сайта при помощи АПИ
 
-2. Пофоксить код на 27 строчке
-
+ Попробовать пофиксить код, когда мы пишем "Москва", он "Андора ла Веля" и затем мы пишем Якутск
+- Сделать так, чтобы бот отправлял картинку не только своего города, и нашего. Просто вызвать повторно функцию photos() и передать в неё город юзера. + ещё один send_photo
 """
