@@ -29,8 +29,6 @@ def soobsh(message: Message):
     # добавлять в БД юзера только, если у него есть юзернейм
     update(message.from_user.username, message.from_user.id)
     # if "username" = NULL:
-        
-
 
     print(info)
     knopki = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -38,6 +36,8 @@ def soobsh(message: Message):
     knopki.add(knopk)
     # telbot.send_message(message.from_user.id,"вас выследили",reply_markup=knopki)
     telbot.send_sticker(message.from_user.id, "CAACAgIAAxkBAAEMM81mU1B_M45YswKX4Lt-5PM9uaktQAACAQADwDZPExguczCrPy1RNQQ")
+
+
 def file():
     with sqlite3.connect('my_database.db') as f:
         cursor = f.cursor()
@@ -48,19 +48,19 @@ def file():
         ''')
 
         f.commit()
-def update(username,id_telega):
+
+
+def update(username, id_telega):
     with sqlite3.connect('my_database.db') as f:
         cursor = f.cursor()
-        cursor.execute('INSERT INTO Users (username,id_telega) VALUES (?,?)',(username,id_telega))
+        cursor.execute('INSERT INTO Users (username,id_telega) VALUES (?,?)', (username, id_telega))
 
         f.commit()
-
 
 
 @telbot.message_handler(commands=["clear"])
 def chistka(message: Message):
     memory.clear()
-
 
 
 @telbot.message_handler(content_types=["text"])
@@ -72,76 +72,88 @@ def soobsh(message: Message):
         telbot.send_message(message.from_user.id, "Такого города не существует")
         return
 
-
     if city_player in memory:
-        telbot.send_message(message.from_user.id,"Такой город уже существует")
+        telbot.send_message(message.from_user.id, "Такой город уже существует")
         return
-    if len(memory)>0:
+    if len(memory) > 0:
         member = memory[-1][-1]
-        if memory[-1][-1] in ["ь", "ъ", "ы","й"]:
-            member=memory[-1][-2]
-        if member!=city_player[0]:
+        if memory[-1][-1] in ["ь", "ъ", "ы", "й"]:
+            member = memory[-1][-2]
+        if member != city_player[0]:
             telbot.send_message(message.from_user.id, "Вам на другую букву")
             return
 
     memory.append(city_player)  # добавляем город для запоминания
 
-    lat,lon = found_city[0]["latitude"],found_city[0]["longitude"]  # получаем коорды города юзера
-    life,gras,ic,tp=sience(shir=lat,dol=lon)    # отправляем запрос в API AQI (на сайт)
+    lat, lon = found_city[0]["latitude"], found_city[0]["longitude"]  # получаем коорды города юзера
+    life, gras, ic, tp = sience(shir=lat, dol=lon)  # отправляем запрос в API AQI (на сайт)
     telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
-    telbot.send_location(message.from_user.id,lat,lon )
+    telbot.send_location(message.from_user.id, lat, lon)
+    pictures = photos(goroda=city_player)
+    if pictures is not None:
+        telbot.send_photo(message.from_user.id, pictures)
 
     # логика с последней буквой
     last_char = city_player[-1]
-    if city_player[-1] in ["ь", "ъ", "ы","й"]:
+    if city_player[-1] in ["ь", "ъ", "ы", "й"]:
         last_char = city_player[-2]
     telbot.send_message(message.from_user.id, f"Мне на букву {last_char}")
 
-
-    botcity,bot_shir,bot_dol = poisk(word=last_char)    # вызываем функцию поиск (вернёт нам: назв. города, широту и долготу)
+    botcity, bot_shir, bot_dol = poisk(
+        word=last_char)  # вызываем функцию поиск (вернёт нам: назв. города, широту и долготу)
     memory.append(botcity)  # запоминаем, какой город назвал бот
 
-    life,gras,ic,tp=sience(shir=bot_shir,dol=bot_dol)    # тут отправляем данные города бота и просим узнать погоду
+    life, gras, ic, tp = sience(shir=bot_shir, dol=bot_dol)  # тут отправляем данные города бота и просим узнать погоду
 
     telbot.send_message(message.from_user.id, botcity)
-    pictures=photos(goroda=botcity)
-    telbot.send_photo(message.from_user.id,pictures)
+    pictures = photos(goroda=botcity)
+    if pictures is not None:
+        telbot.send_photo(message.from_user.id, pictures)
     telbot.send_message(message.from_user.id, f"уровень загрязнения {life} \nвремя {gras} \nтемпература {tp}")
-    telbot.send_location(message.from_user.id, bot_shir,bot_dol )
+    telbot.send_location(message.from_user.id, bot_shir, bot_dol)
     print((memory))
-def photos(goroda):
-    fff=f"https://api.unsplash.com/search/photos?query={goroda}&per_page=10&client_id=0QOVEHz-gJJjG25inVgfq4y_eiEH_HYDnLGI6YnQbhc"
-    otvet = requests.get(fff)
 
+
+def photos(goroda):
+    fff = f"https://api.unsplash.com/search/photos?query={goroda}&per_page=10&client_id=0QOVEHz-gJJjG25inVgfq4y_eiEH_HYDnLGI6YnQbhc"
+    otvet = requests.get(fff)
+    # print(otvet.json())
     # pprint(otvet.json())
     full = otvet.json()["results"]
 
     pictures = []
     for info in full:
-
         otpr = info['urls']['full']
         pictures.append(otpr)
     random.shuffle(pictures)
+    if len(otvet.json()['results']) == 0:
+        return None
 
+    print('вот ссылка на картинку: ', pictures[0])
     return pictures[0]
+
+
 def poisk(word):
     for x in cities:
         names = cities[x]['alternatenames']
         for y in names:
             if y and y[0] == word.upper() and y not in memory:
                 print(cities[x])
-                return y,cities[x]["latitude"],cities[x]["longitude"]   # бот нашёл название города и его коорды
+                return y, cities[x]["latitude"], cities[x]["longitude"]  # бот нашёл название города и его коорды
 
-def sience(shir,dol):
+
+def sience(shir, dol):
     fff = f"http://api.airvisual.com/v2/nearest_city?lat={shir}&lon={dol}&key=e5bcfe8d-df20-4d0a-9954-5845c6396e0e"
     otvet = requests.get(fff)
-    #pprint(otvet.json())
+    pprint(otvet.json())
+
     life = otvet.json()["data"]["current"]["pollution"]["aqicn"]
     gras = otvet.json()["data"]["current"]["weather"]["ts"]
     ic = otvet.json()["data"]["current"]["weather"]["ic"]
     tp = otvet.json()["data"]["current"]["weather"]["tp"]
 
-    return life,gras,ic,tp
+    return life, gras, ic, tp
+
 
 telbot.polling()
 
